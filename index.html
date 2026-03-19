@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Developer Command Center</title>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+    <style>
+        :root {
+            /* THEME COLOR UPDATED TO GOLD */
+            --accent: #00FFC3; 
+            --bg-tint: rgba(0, 0, 0, 0.85); 
+            --panel-bg: rgba(30, 20, 0, 0.6);
+        }
+
+        body {
+            margin: 0;
+            background-color: #050505;
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .viewport-bg-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100vh;
+            z-index: -2;
+        }
+
+        #master-bg-image {
+            width: 100%; height: 100%;
+            background-image: url('1.webp'); 
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* REMOVES THE BLACK LOADING LINE */
+        
+
+        .viewport-bg-container::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, transparent, #000 100%), var(--bg-tint);
+            z-index: -1;
+        }
+
+        .terminal-ui {
+            display: grid;
+            grid-template-columns: 380px 1fr 300px;
+            height: 100vh;
+            padding: 40px;
+            box-sizing: border-box;
+            gap: 20px;
+            align-items: center;
+        }
+
+        /* --- TACTICAL HUD DESIGN --- */
+        .left-panel {
+            background: linear-gradient(135deg, rgba(20, 15, 0, 0.9), rgba(10, 5, 0, 0.95));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 204, 0, 0.3);
+            padding: 30px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            clip-path: polygon(0 0, 100% 0, 100% 92%, 92% 100%, 0 100%);
+        }
+
+        .left-panel::before {
+            content: ""; position: absolute; top: 0; left: 0; width: 20px; height: 20px;
+            border-top: 3px solid var(--accent); border-left: 3px solid var(--accent);
+        }
+
+        .dev-photo-container {
+            width: 180px;
+            height: 180px;
+            margin: 10px auto;
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 15px var(--accent), inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        #display-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease, object-position 0.4s ease;
+            transform-origin: center;
+        }
+
+        .dev-photo-container::after {
+            content: "";
+            position: absolute;
+            inset: -5px;
+            border: 1px dashed var(--accent);
+            border-radius: 50%;
+            animation: rotate-ring 10s linear infinite;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        @keyframes rotate-ring {
+            from { transform: rotate(0deg); } to { transform: rotate(360deg); }
+        }
+
+        .name-header {
+            border-bottom: 1px solid var(--accent);
+            padding-bottom: 5px;
+            margin-top: 10px;
+        }
+
+        .dev-name { font-size: 1.8rem; text-transform: uppercase; margin: 0; color: #fff; }
+
+        .status-tag {
+            font-size: 0.7rem;
+            background: var(--accent);
+            color: #000;
+            display: inline-block;
+            padding: 2px 6px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .terminal-data-box { font-family: 'Consolas', monospace; margin-top: 10px; }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+
+        .label { color: rgba(255, 255, 255, 0.5); }
+        .value { color: var(--accent); text-shadow: 0 0 5px var(--accent); }
+
+        .bio-section {
+            margin-top: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border: 1px solid rgba(255, 204, 0, 0.1);
+        }
+
+        .bio-header { font-size: 0.7rem; color: var(--accent); margin-bottom: 5px; opacity: 0.8; }
+
+        .dev-desc { font-size: 0.85rem; color: #eee; margin: 0; line-height: 1.4; }
+
+        .tech-stats { margin-top: 15px; display: flex; gap: 5px; }
+        .stat-bar { height: 4px; flex: 1; background: rgba(255,255,255,0.1); overflow: hidden; }
+        .stat-bar .fill { 
+            height: 100%; background: var(--accent); 
+            box-shadow: 0 0 10px var(--accent);
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: pulse-width 2s infinite alternate;
+        }
+
+        @keyframes pulse-width { from { opacity: 0.6; } to { opacity: 1; } }
+
+        .center-viewport { height: 80vh; position: relative; }
+        model-viewer { width: 100%; height: 100%; outline: none; background-color: transparent;--progress-bar-height: 0px; }
+
+        .loading-spinner {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px; height: 50px;
+            border: 3px solid var(--accent);
+            border-top: 3px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* --- TACTICAL SELECTION PANEL --- */
+        /* --- TACTICAL SELECTION PANEL --- */
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    perspective: 1000px;
+    padding-right: 20px;
+}
+
+.cycle-btn {
+    position: relative;
+    /* Default dark background */
+    background: rgba(40, 30, 0, 0.4); 
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 15px 25px;
+    text-align: left;
+    text-transform: uppercase;
+    font-family: 'Consolas', monospace;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    clip-path: polygon(0% 0%, 90% 0%, 100% 30%, 100% 100%, 10% 100%, 0% 70%);
+    border-left: 4px solid transparent;
+}
+
+/* Hover State - Uses JavaScript-driven variables */
+.cycle-btn:hover {
+    color: #fff;
+    /* Dynamic color provided by JS */
+    background: var(--btn-hover); 
+    border-left: 4px solid var(--hover-accent);
+    transform: translateX(-10px) translateZ(20px);
+    /* Glow matches the developer's unique color */
+    box-shadow: -10px 0 20px var(--btn-hover); 
+}
+
+/* Active State - Matches current global --accent */
+.cycle-btn.active {
+    background: var(--accent);
+    color: #000;
+    border-left: 8px solid #fff;
+    transform: translateX(-25px) translateZ(50px) rotateY(-5deg);
+    box-shadow: -15px 0 30px var(--accent);
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+}
+
+        .cycle-btn::after {
+            content: "SELECT_UNIT";
+            position: absolute;
+            right: -10px;
+            bottom: -5px;
+            font-size: 0.5rem;
+            opacity: 0.2;
+            letter-spacing: 2px;
+        }
+
+        .cycle-btn.active::after {
+            content: "UNIT_ENGAGED";
+            color: #000;
+            opacity: 0.8;
+        }
+
+        .cycle-btn::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: 0.5s;
+        }
+
+        .cycle-btn:hover::before {
+            left: 100%;
+        }
+
+        @media (max-width: 1000px) {
+            .terminal-ui { grid-template-columns: 1fr; overflow-y: auto; height: auto; padding: 20px; }
+            .center-viewport { height: 50vh; }
+        }
+        .panel-header-tag {
+    font-family: 'Consolas', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    padding-left: 5px;
+    border-left: 2px solid var(--accent);
+    opacity: 0.8;
+    /* Optional: adds a slight glow to match the theme */
+    text-shadow: 0 0 10px var(--accent);
+} 
+        #intro-overlay {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 9999; /* Ensures it is above everything */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 1.5s ease, visibility 1.5s;
+    font-family: 'Consolas', monospace;
+}
+
+.intro-content {
+    text-align: center;
+    color: #05f80e; /* Matching your gold theme */
+}
+
+.intro-title {
+    font-size: 2rem;
+    letter-spacing: 10px;
+    margin-bottom: 20px;
+    text-shadow: 0 0 20px #05f80e;
+}
+
+.intro-scanner {
+    width: 300px;
+    height: 2px;
+    background: #05f80e;
+    margin: 20px auto;
+    box-shadow: 0 0 15px #05f80e;
+    animation: scan 2s infinite ease-in-out;
+}
+
+.enter-btn {
+    background: transparent;
+    border: 1px solid #05f80e;
+    color: #05f80e;
+    padding: 10px 30px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 30px;
+    transition: 0.3s;
+}
+
+.enter-btn:hover {
+    background: #05f80e;
+    color: #000;
+    box-shadow: 0 0 30px #05f80e;
+}
+
+/* Animation for the intro bar */
+@keyframes scan {
+    0%, 100% { width: 50px; opacity: 0.3; }
+    50% { width: 300px; opacity: 1; }
+}
+
+.fade-out {
+    opacity: 0;
+    visibility: hidden;
+}
+/* Intro-specific glitch effect */
+.intro-glitch-exit {
+    animation: intro-glitch-anim 0.4s steps(2) infinite;
+    pointer-events: none;
+}
+
+@keyframes intro-glitch-anim {
+    0% { transform: translate(2px, 2px); filter: hue-rotate(90deg) brightness(2); }
+    25% { transform: translate(-2px, -2px); filter: contrast(2); }
+    50% { transform: translate(5px, 0); clip-path: inset(10% 0 40% 0); }
+    75% { transform: translate(-5px, 2px); filter: invert(1); }
+    100% { transform: translate(0, 0); }
+}
+
+/* Ensure the overlay smooths out the final removal */
+#intro-overlay {
+    transition: opacity 0.8s ease, visibility 0.8s;
+}
+    </style>
+</head>
+<body>
+<div id="intro-overlay">
+    <div class="intro-content">
+        <h1 class="intro-title">NEURAL_LINK_ESTABLISHED</h1>
+        <div class="intro-scanner"></div>
+        <p class="intro-subtitle">INITIALIZING COMMAND CENTER...</p>
+        <button class="enter-btn" onclick="startSystem()">INITIALIZE_SYSTEM</button>
+    </div>
+</div>
+<div class="viewport-bg-container">
+    <div id="master-bg-image"></div>
+</div>
+
+<main class="terminal-ui">
+    <div class="left-panel">
+        <div class="dev-photo-container">
+            <img id="display-photo" src="sh.jpeg" alt="Developer Profile" style="object-fit: cover; object-position: center 20%; transform: scale(1.1);">
+        </div>
+
+        <div class="name-header">
+            <h2 id="display-name" class="dev-name">SAHIL</h2>
+            <div class="status-tag">ACTIVE_UNIT</div>
+        </div>
+
+        <div class="terminal-data-box">
+            <div class="data-row">
+                <span class="label">ROLE:</span>
+                <span id="display-class" class="value">Lead developer</span>
+            </div>
+            <div class="data-row">
+                <span class="label">ORIGIN:</span>
+                <span class="value">Local_Host</span>
+            </div>
+            
+            <div class="bio-section">
+                <div class="bio-header">MESSAGE_LOG</div>
+                <p id="display-desc" class="dev-desc">The Hard Working Ant And Developer.</p>
+            </div>
+            
+            <div class="tech-stats">
+                <div class="stat-bar"><div id="stat-fill-1" class="fill" style="width:60%"></div></div>
+                <div class="stat-bar"><div id="stat-fill-2" class="fill" style="width:70%"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="center-viewport">
+        <model-viewer id="main-viewer" src="model4.glb" interaction-prompt="none" camera-controls disable-pan autoplay disable-zoom shadow-intensity="1" camera-orbit="85deg 90deg 105%">
+            <div slot="poster"><div class="loading-spinner"></div></div>
+        </model-viewer>
+    </div>
+
+    <div class="right-panel">
+        <div class="panel-header-tag">DEVELOPER_DATABASE</div>
+        <button class="cycle-btn active" onclick="switchDev(0)">Sahil</button>
+        <button class="cycle-btn" onclick="switchDev(1)">Sanjeev Singh</button>
+        <button class="cycle-btn" onclick="switchDev(2)">Aryan</button>
+        <button class="cycle-btn" onclick="switchDev(3)">Harshit</button>
+        <button class="cycle-btn" onclick="switchDev(4)">Anant</button>
+    </div>
+</main>
+
+<script>
+    const developers = [
+        { name: "Sahil", role: "Lead Developer", desc: "The Hard Working Ant And Developer.", model: "model4.glb", photo: "sh.jpeg", color: "#00FFC3", orbit: "85deg 90deg 105%", photoSettings: { position: "center 20%", scale: "1.1" }, stats: [60, 70] },
+        { name: "Sanjeev Singh", role: "3d Architect", desc: "The God And All Knowing Developer.", model: "model2.glb", photo: "s.jpeg", color: "#BC13FE", orbit: "0deg 75deg 100%", photoSettings: { position: "center 40%", scale: "1.1" }, stats: [70, 65] },
+        { name: "Aryan singhvishesh", role: "design Specialist", desc: "Group ka dalal.", model: "model3.glb", photo: "ar.jpeg", color: "#f207b4", orbit: "0deg 75deg 100%", photoSettings: { position: "center 10%", scale: "1" }, stats: [75, 50] },
+        { name: "Harshit kumar", role: "Web Recruit", desc: "A beginner in web development.", model: "model1.glb", photo: "h.jpeg", color: "#FF003C", orbit: "0deg 75deg 100%", photoSettings: { position: "80% 70%", scale: "1.1" }, stats: [95, 50] },
+        { name: "Anant bhardwaj", role: "model designer", desc: "Crippled Developer.", model: "model5.glb", photo: "an.jpeg", color: "#ffcc00", orbit: "85deg 90deg 100%", photoSettings: { position: "center 50%", scale: "1.2" }, stats: [35, 95] }
+    ];
+
+    function switchDev(index) {
+        const dev = developers[index];
+        const root = document.documentElement;
+        const viewer = document.getElementById('main-viewer');
+        const photoImg = document.getElementById('display-photo');
+        
+        document.getElementById('display-name').innerText = dev.name;
+        document.getElementById('display-desc').innerText = dev.desc;
+        document.getElementById('display-class').innerText = dev.role || "CORE_OPERATOR";
+
+        photoImg.src = dev.photo;
+        root.style.setProperty('--accent', dev.color);
+
+        if (dev.photoSettings) {
+            photoImg.style.objectPosition = dev.photoSettings.position;
+            photoImg.style.transform = `scale(${dev.photoSettings.scale})`;
+        }
+
+        viewer.src = dev.model;
+        setTimeout(() => {
+            viewer.cameraOrbit = dev.orbit || "90deg 75deg 105%";
+            viewer.jumpCameraToGoal();
+        }, 50);
+
+        document.querySelectorAll('.cycle-btn').forEach((btn, i) => {
+            btn.classList.toggle('active', i === index);
+        });
+
+        if (dev.stats) {
+            document.getElementById('stat-fill-1').style.width = dev.stats[0] + "%";
+            document.getElementById('stat-fill-2').style.width = dev.stats[1] + "%";
+        }
+    }
+    // Add hover listeners to all buttons
+// Add hover listeners to all buttons
+document.querySelectorAll('.cycle-btn').forEach((btn, index) => {
+    btn.addEventListener('mouseenter', () => {
+        // Get the specific color for this developer (e.g., #BC13FE for Sanjeev)
+        const devColor = developers[index].color; 
+        
+        // Create a transparent version for the background glow (approx 20% opacity)
+        const rgbaColor = devColor + "33"; 
+        
+        // Apply the unique colors to this specific button's CSS variables
+        btn.style.setProperty('--btn-hover', rgbaColor);
+        btn.style.setProperty('--hover-accent', devColor);
+    });
+
+    btn.addEventListener('mouseleave', () => {
+        // Reset properties so it doesn't stay colored after hover
+        btn.style.removeProperty('--btn-hover');
+        btn.style.removeProperty('--hover-accent');
+    });
+});
+function startSystem() {
+    const intro = document.getElementById('intro-overlay');
+    
+    // 1. Start the violent glitching
+    intro.classList.add('intro-glitch-exit');
+    
+    // 2. After a short burst, fade it out to reveal the page
+    setTimeout(() => {
+        intro.classList.add('fade-out');
+    }, 400); 
+}
+</script>
+
+</body>
+</html>
