@@ -30,9 +30,12 @@
 
         #master-bg-image {
             width: 100%; height: 100%;
-            background-image: url('1.webp'); 
+            background-image: url('4.png'); 
             background-size: cover;
             background-position: center;
+            background-repeat: no-repeat;
+            background-size: 120%;
+            
         }
 
         /* REMOVES THE BLACK LOADING LINE */
@@ -261,6 +264,10 @@
             .terminal-ui { grid-template-columns: 1fr; overflow-y: auto; height: auto; padding: 20px; }
             .center-viewport { height: 50vh; }
         }
+        #master-bg-image {
+        /* This will only apply to phones */
+        background-position: 30% center; 
+    }
         .panel-header-tag {
     font-family: 'Consolas', monospace;
     font-size: 0.75rem;
@@ -368,25 +375,25 @@
 
     .terminal-ui {
         display: flex;
-        flex-direction: column; /* Stack elements vertically */
-        padding: 20px 15px;
+        flex-direction: column;
+        padding: 10px;
         height: auto;
-        gap: 30px;
+        gap: 20px;
     }
 
     /* 1. Show Model at the top */
     .center-viewport {
-        order: 1; 
-        height: 45vh; /* Take up half the screen height */
+        order: 2; 
+        height: 45vh;
         width: 100%;
     }
 
     /* 2. Show Bio/Stats in the middle */
     .left-panel {
-        order: 2;
+        order: 3;
         width: 100%;
         padding: 20px;
-        clip-path: none; /* Simplify shape for better spacing */
+        clip-path: none;
         box-sizing: border-box;
     }
 
@@ -401,17 +408,32 @@
 
     /* 3. Show Selection Buttons at the bottom */
     .right-panel {
-        order: 3;
+        order: 1; /* Moves panel to the top */
         width: 100%;
-        padding-right: 0;
-        margin-bottom: 40px;
+        padding: 10px 0;
+        flex-direction: row; /* Align buttons horizontally */
+        overflow-x: auto; /* Enable side-scrolling for names */
+        white-space: nowrap;
+        gap: 10px;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        scrollbar-width: none; /* Hide scrollbar for clean UI */
     }
+    .right-panel::-webkit-scrollbar { display: none; }
+    .panel-header-tag { display: none; }
 
     .cycle-btn {
-        padding: 12px 15px;
-        font-size: 0.8rem;
-        /* Prevent accidental zoom on mobile tap */
-        -webkit-tap-highlight-color: transparent;
+        flex: 0 0 auto;
+        padding: 10px 20px;
+        font-size: 0.75rem;
+        clip-path: none; /* Simple shape for better tap targets */
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(40, 30, 0, 0.6);
+        transform: none !important; /* Disable desktop 3D tilt */
+        margin: 0;
     }
 
     /* Adjust Intro for Mobile */
@@ -424,18 +446,106 @@
     .intro-scanner {
         width: 80%;
     }
+    .cycle-btn.active {
+        background: var(--accent);
+        color: #000;
+        border: 1px solid #fff;
+        transform: scale(1.05) !important;
+    }
+    
+}
+.progress-bar-wrap {
+    width: 250px;
+    height: 2px;
+    background: rgba(5, 248, 14, 0.1);
+    margin: 15px auto;
+    border: 1px solid rgba(5, 248, 14, 0.2);
+    overflow: hidden;
+}
+
+#intro-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: #05f80e;
+    box-shadow: 0 0 10px #05f80e;
+    transition: width 0.4s ease;
+}
+
+.intro-subtitle {
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+/* --- PROFILE GLITCH EFFECT --- */
+.glitch-active {
+    animation: photo-glitch 0.4s cubic-bezier(.25, .46, .45, .94) both;
+}
+
+@keyframes photo-glitch {
+    0% {
+        transform: scale(1.1) translate(0);
+        filter: hue-rotate(0deg) brightness(1);
+    }
+    20% {
+        transform: scale(1.1) translate(-5px, 5px);
+        filter: hue-rotate(90deg) brightness(1.5);
+        clip-path: inset(10% 0 30% 0);
+    }
+    40% {
+        transform: scale(1.1) translate(5px, -5px);
+        filter: contrast(2) isepia(1);
+        clip-path: inset(40% 0 10% 0);
+    }
+    60% {
+        transform: scale(1.1) translate(-8px, 0);
+        filter: saturate(5);
+    }
+    80% {
+        transform: scale(1.1) translate(8px, 2px);
+        clip-path: inset(25% 0 25% 0);
+    }
+    100% {
+        transform: scale(1.1) translate(0);
+        filter: hue-rotate(0deg) brightness(1);
+    }
+}
+.dev-photo-container::before {
+    content: "";
+    position: absolute;
+    top: -100%;
+    left: 0;
+    width: 100%;
+    height: 10px;
+    background: linear-gradient(to bottom, transparent, var(--accent), transparent);
+    opacity: 0.5;
+    z-index: 2;
+    animation: scanline-move 3s linear infinite;
+}
+
+@keyframes scanline-move {
+    0% { top: -10%; }
+    100% { top: 110%; }
 }
     </style>
 </head>
 <body>
-<div id="intro-overlay">
+
+   <div id="intro-overlay">
     <div class="intro-content">
         <h1 class="intro-title">NEURAL_LINK_ESTABLISHED</h1>
         <div class="intro-scanner"></div>
-        <p class="intro-subtitle">INITIALIZING COMMAND CENTER...</p>
-        <button class="enter-btn" onclick="startSystem()">INITIALIZE_SYSTEM</button>
+        <div id="loading-status-container">
+            <p id="load-status" class="intro-subtitle">WARMING_UP_ENGINES...</p>
+            <div class="progress-bar-wrap">
+                <div id="intro-progress-fill"></div>
+            </div>
+        </div>
+        <button id="init-btn" class="enter-btn" onclick="startSystem()" style="display: none;">INITIALIZE_SYSTEM</button>
     </div>
+
+    <model-viewer id="warmup-viewer" style="display:none;"></model-viewer>
 </div>
+
 <div class="viewport-bg-container">
     <div id="master-bg-image"></div>
 </div>
@@ -484,7 +594,7 @@
     <div class="right-panel">
         <div class="panel-header-tag">DEVELOPER_DATABASE</div>
         <button class="cycle-btn active" onclick="switchDev(0)">Sahil</button>
-        <button class="cycle-btn" onclick="switchDev(1)">Sanjeev Singh</button>
+        <button class="cycle-btn" onclick="switchDev(1)">Sanjeev</button>
         <button class="cycle-btn" onclick="switchDev(2)">Aryan</button>
         <button class="cycle-btn" onclick="switchDev(3)">Harshit</button>
         <button class="cycle-btn" onclick="switchDev(4)">Anant</button>
@@ -495,7 +605,7 @@
     const developers = [
         { name: "Sahil", role: "Lead Developer", desc: "The Hard Working Ant And Developer.", model: "model4.glb", photo: "sh.jpeg", color: "#00FFC3", orbit: "85deg 90deg 105%", photoSettings: { position: "center 20%", scale: "1.1" }, stats: [60, 70] },
         { name: "Sanjeev Singh", role: "3d Architect", desc: "The God And All Knowing Developer.", model: "model2.glb", photo: "s.jpeg", color: "#BC13FE", orbit: "0deg 75deg 100%", photoSettings: { position: "center 40%", scale: "1.1" }, stats: [70, 65] },
-        { name: "Aryan singhvishesh", role: "design Specialist", desc: "Group ka dalal.", model: "model3.glb", photo: "ar.jpeg", color: "#f207b4", orbit: "0deg 75deg 100%", photoSettings: { position: "center 10%", scale: "1" }, stats: [75, 50] },
+        { name: "Aryan singhvishesh", role: "design Specialist", desc: "Group ka dalal.", model: "model3.glb", photo: "ar.jpeg", color: "#f207b4", orbit: "0deg 75deg 100%", photoSettings: { position: "center 10%", scale: "0.9" }, stats: [75, 50] },
         { name: "Harshit kumar", role: "Web Recruit", desc: "A beginner in web development.", model: "model1.glb", photo: "h.jpeg", color: "#FF003C", orbit: "0deg 75deg 100%", photoSettings: { position: "80% 70%", scale: "1.1" }, stats: [95, 50] },
         { name: "Anant bhardwaj", role: "model designer", desc: "Crippled Developer.", model: "model5.glb", photo: "an.jpeg", color: "#ffcc00", orbit: "85deg 90deg 100%", photoSettings: { position: "center 50%", scale: "1.2" }, stats: [35, 95] }
     ];
@@ -532,6 +642,9 @@
             document.getElementById('stat-fill-1').style.width = dev.stats[0] + "%";
             document.getElementById('stat-fill-2').style.width = dev.stats[1] + "%";
         }
+        photoImg.classList.remove('glitch-active');
+    void photoImg.offsetWidth; // "Magic" line to reset the animation
+    photoImg.classList.add('glitch-active');
     }
     // Add hover listeners to all buttons
 // Add hover listeners to all buttons
@@ -565,6 +678,59 @@ function startSystem() {
         intro.classList.add('fade-out');
     }, 400); 
 }
+async function preloadAssets() {
+    const statusText = document.getElementById('load-status');
+    const progressFill = document.getElementById('intro-progress-fill');
+    const initBtn = document.getElementById('init-btn');
+    const warmup = document.getElementById('warmup-viewer');
+    
+    const urls = developers.map(d => d.model);
+    let checkedCount = 0;
+
+    for (const url of urls) {
+        statusText.innerText = `INITIALIZING: ${url}`;
+        
+        await new Promise((resolve) => {
+            // Set a timeout so if the model doesn't exist, we don't get stuck forever
+            const timeout = setTimeout(() => {
+                console.warn(`File not found or slow: ${url}`);
+                resolve(); 
+            }, 3000); 
+
+            warmup.src = url;
+
+            // Handle successful load
+            const handleLoad = () => {
+                clearTimeout(timeout);
+                resolve();
+            };
+
+            // Handle error (missing file)
+            const handleError = () => {
+                clearTimeout(timeout);
+                console.error(`Could not load: ${url}`);
+                resolve();
+            };
+
+            warmup.addEventListener('load', handleLoad, { once: true });
+            warmup.addEventListener('error', handleError, { once: true });
+        });
+
+        checkedCount++;
+        const progress = (checkedCount / urls.length) * 100;
+        progressFill.style.width = progress + "%";
+    }
+
+    // Finalize state
+    statusText.innerText = "SYSTEMS_INTEGRATED";
+    setTimeout(() => {
+        const statusContainer = document.getElementById('loading-status-container');
+        if (statusContainer) statusContainer.style.display = 'none';
+        initBtn.style.display = 'inline-block';
+    }, 800);
+}
+
+window.addEventListener('load', preloadAssets);
 </script>
 
 </body>
