@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Developer Command Center</title>
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
     <style>
@@ -359,6 +359,71 @@
     justify-content: center;
     align-items: center;
     background-color: transparent; /* Keep it transparent to see the star background */
+}
+/* --- MOBILE OPTIMIZATION --- */
+@media (max-width: 1000px) {
+    body {
+        overflow-y: auto; /* Allow scrolling on small screens */
+    }
+
+    .terminal-ui {
+        display: flex;
+        flex-direction: column; /* Stack elements vertically */
+        padding: 20px 15px;
+        height: auto;
+        gap: 30px;
+    }
+
+    /* 1. Show Model at the top */
+    .center-viewport {
+        order: 1; 
+        height: 45vh; /* Take up half the screen height */
+        width: 100%;
+    }
+
+    /* 2. Show Bio/Stats in the middle */
+    .left-panel {
+        order: 2;
+        width: 100%;
+        padding: 20px;
+        clip-path: none; /* Simplify shape for better spacing */
+        box-sizing: border-box;
+    }
+
+    .dev-photo-container {
+        width: 120px;
+        height: 120px;
+    }
+
+    .dev-name {
+        font-size: 1.4rem;
+    }
+
+    /* 3. Show Selection Buttons at the bottom */
+    .right-panel {
+        order: 3;
+        width: 100%;
+        padding-right: 0;
+        margin-bottom: 40px;
+    }
+
+    .cycle-btn {
+        padding: 12px 15px;
+        font-size: 0.8rem;
+        /* Prevent accidental zoom on mobile tap */
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Adjust Intro for Mobile */
+    .intro-title {
+        font-size: 1.2rem;
+        letter-spacing: 4px;
+        padding: 0 10px;
+    }
+    
+    .intro-scanner {
+        width: 80%;
+    }
 }
     </style>
 </head>
