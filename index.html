@@ -264,10 +264,7 @@
             .terminal-ui { grid-template-columns: 1fr; overflow-y: auto; height: auto; padding: 20px; }
             .center-viewport { height: 50vh; }
         }
-        #master-bg-image {
-        /* This will only apply to phones */
-        background-position: 30% center; 
-    }
+        
         .panel-header-tag {
     font-family: 'Consolas', monospace;
     font-size: 0.75rem;
@@ -372,7 +369,10 @@
     body {
         overflow-y: auto; /* Allow scrolling on small screens */
     }
-
+    #master-bg-image {
+        /* This will only apply to phones */
+        background-position: 30% center; 
+    }
     .terminal-ui {
         display: flex;
         flex-direction: column;
