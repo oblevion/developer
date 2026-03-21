@@ -30,7 +30,7 @@
 
         #master-bg-image {
             width: 100%; height: 100%;
-            background-image: url('4.png'); 
+            background-image: url('5.png'); 
             background-size: cover;
             background-position: center;
             /* background-size: 120%; */
@@ -541,7 +541,6 @@
                 <div id="intro-progress-fill"></div>
             </div>
         </div>
-        <button id="init-btn" class="enter-btn" onclick="startSystem()" style="display: none;">INITIALIZE_SYSTEM</button>
     </div>
 
     <model-viewer id="warmup-viewer" style="display:none;"></model-viewer>
@@ -671,12 +670,13 @@ document.querySelectorAll('.cycle-btn').forEach((btn, index) => {
 function startSystem() {
     const intro = document.getElementById('intro-overlay');
     
-    // 1. Start the violent glitching
+    // Start the glitch effect
     intro.classList.add('intro-glitch-exit');
     
-    // 2. After a short burst, fade it out to reveal the page
+    // Fade out and remove from view
     setTimeout(() => {
-        intro.classList.add('fade-out');
+        intro.style.opacity = '0';
+        intro.style.visibility = 'hidden';
     }, 400); 
 }
 async function preloadAssets() {
@@ -723,15 +723,98 @@ async function preloadAssets() {
     }
 
     // Finalize state
+    // Finalize state: Auto-trigger the transition
     statusText.innerText = "SYSTEMS_INTEGRATED";
+    progressFill.style.width = "100%"; // Ensure it looks full
+
     setTimeout(() => {
-        const statusContainer = document.getElementById('loading-status-container');
-        if (statusContainer) statusContainer.style.display = 'none';
-        initBtn.style.display = 'inline-block';
-    }, 800);
+        // Automatically start the system without waiting for a click
+        startSystem();
+    }, 800); // Small delay so the user can see the "Integrated" status
 }
 
+
 window.addEventListener('load', preloadAssets);
+/* --- TOUCH SWIPE SUPPORT FOR MOBILE --- */
+let touchstartX = 0;
+let touchendX = 0;
+let currentDevIndex = 0; // Keep track of current index globally
+
+const leftPanel = document.querySelector('.left-panel');
+
+function handleGesture() {
+    // Only trigger if on a mobile device/width
+    if (window.innerWidth > 1000) return;
+
+    const threshold = 50; // Minimum distance to be considered a swipe
+    if (touchendX < touchstartX - threshold) {
+        // Swiped Left -> Next Developer
+        currentDevIndex = (currentDevIndex + 1) % developers.length;
+        switchDev(currentDevIndex);
+    }
+    if (touchendX > touchstartX + threshold) {
+        // Swiped Right -> Previous Developer
+        currentDevIndex = (currentDevIndex - 1 + developers.length) % developers.length;
+        switchDev(currentDevIndex);
+    }
+}
+
+// Add listeners to the card
+leftPanel.addEventListener('touchstart', e => {
+    touchstartX = e.changedTouches[0].screenX;
+}, {passive: true});
+
+leftPanel.addEventListener('touchend', e => {
+    touchendX = e.changedTouches[0].screenX;
+    handleGesture();
+}, {passive: true});
+
+/* --- UPDATED SWITCHDEV FUNCTION --- */
+// Modify your existing switchDev to update the global index
+function switchDev(index) {
+    currentDevIndex = index; // Keep the global index in sync
+    const dev = developers[index];
+    const root = document.documentElement;
+    const viewer = document.getElementById('main-viewer');
+    const photoImg = document.getElementById('display-photo');
+    
+    document.getElementById('display-name').innerText = dev.name;
+    document.getElementById('display-desc').innerText = dev.desc;
+    document.getElementById('display-class').innerText = dev.role || "CORE_OPERATOR";
+
+    photoImg.src = dev.photo;
+    root.style.setProperty('--accent', dev.color);
+
+    if (dev.photoSettings) {
+        photoImg.style.objectPosition = dev.photoSettings.position;
+        photoImg.style.transform = `scale(${dev.photoSettings.scale})`;
+    }
+
+    viewer.src = dev.model;
+    setTimeout(() => {
+        viewer.cameraOrbit = dev.orbit || "90deg 75deg 105%";
+        viewer.jumpCameraToGoal();
+    }, 50);
+
+    document.querySelectorAll('.cycle-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === index);
+    });
+
+    if (dev.stats) {
+        document.getElementById('stat-fill-1').style.width = dev.stats[0] + "%";
+        document.getElementById('stat-fill-2').style.width = dev.stats[1] + "%";
+    }
+    
+    photoImg.classList.remove('glitch-active');
+    void photoImg.offsetWidth; 
+    photoImg.classList.add('glitch-active');
+
+    // Scroll the button into view on mobile so the active button is always visible
+    if (window.innerWidth <= 1000) {
+        const activeBtn = document.querySelectorAll('.cycle-btn')[index];
+        activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+}
 </script>
 
 </body>
